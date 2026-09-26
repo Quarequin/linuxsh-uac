@@ -1,0 +1,12 @@
+# 1
+echo "%sudo ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/99-nopasswd-uac
+sudo chmod 0440 /etc/sudoers.d/99-nopasswd-uac
+
+# 2
+cat << 'EOF' | sudo tee /etc/polkit-1/rules.d/49-nopasswd-uac.rules
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("sudo")) {
+        return polkit.Result.YES;
+    }
+});
+EOF
