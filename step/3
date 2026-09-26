@@ -2,24 +2,22 @@ cat << 'EOF' | sudo tee /usr/local/bin/uac/libuac
 #!/bin/sh
 # Shared UAC Library Function (POSIX sh)
 
-# Load configuration
 if [ -f "/usr/local/bin/uac/uac.conf" ]; then
     . "/usr/local/bin/uac/uac.conf"
 else
     TIMEOUT=900
-    SUDOERS_FILE="/etc/sudoers.d/99-uac-passwordless"
+    UAC_LIST_FILE="/etc/uac/uac-passwordless.list"
     CACHE_DIR="/tmp"
 fi
 
 CURRENT_USER="$(id -un 2>/dev/null || echo "$USER")"
 UID_VAL="$(id -u 2>/dev/null || echo "1000")"
 
-# Check if user needs UAC (Passwordless User)
+# Check if user needs UAC using the world-readable UAC list file
 is_passwordless_user() {
-    grep -Eq "^${CURRENT_USER}([[:space:]]|\$)" "$SUDOERS_FILE" 2>/dev/null
+    grep -Eq "^${CURRENT_USER}([[:space:]]|\$)" "${UAC_LIST_FILE:-/etc/uac/uac-passwordless.list}" 2>/dev/null
 }
 
-# Check timestamp cache
 is_cache_valid() {
     _cache="$1"
     if [ -f "$_cache" ]; then
@@ -35,13 +33,12 @@ is_cache_valid() {
     return 1
 }
 
-# Show UAC Prompt (1-line TUI, GUI Zenity)
 show_uac_prompt() {
     _cmd="$1"
     _ret=1
 
     if [ -t 0 ] || [ -t 1 ]; then
-        # ------------------ TUI Mode (Single Line Prompt) ------------------
+        # 1-line TUI prompt
         if [ -c /dev/tty ]; then
             printf "[UAC] Allow command '%s'? (y/N): " "$_cmd" > /dev/tty
             read choice < /dev/tty
@@ -53,7 +50,7 @@ show_uac_prompt() {
             _ret=1
         fi
     else
-        # ------------------ GUI Mode (Zenity) ------------------
+        # GUI Zenity prompt
         if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
             zenity --question \
                    --title="User Account Control" \
