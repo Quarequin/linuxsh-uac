@@ -1,5 +1,5 @@
 #!/bin/sh
-# Project: uac systemd (Setup Script)
+# Project: uac-systemd (Setup Script)
 # Installs modular UAC framework for passwordless users.
 
 set -e
@@ -251,6 +251,6 @@ systemctl enable --now uac-sync.service
 systemctl enable --now uac-sync.path
 /usr/local/bin/uac/syncuac
 
-echo "[+] uac-sysd installed and activated successfully!"
+echo "[+] uac-systemd installed and activated successfully!"
 
 #chmod +x setup.sh
