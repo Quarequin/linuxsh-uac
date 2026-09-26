@@ -1,0 +1,28 @@
+#!/bin/sh
+REAL_PKEXEC="/usr/bin/pkexec"
+
+if [ $# -eq 0 ]; then
+    exec "$REAL_PKEXEC" "$@"
+fi
+
+. "/usr/local/bin/uac/libuac"
+
+if ! is_passwordless_user; then
+    exec "$REAL_PKEXEC" "$@"
+fi
+
+CACHE_FILE="${CACHE_DIR:-/tmp}/.uac_pk_${UID_VAL}_${PPID}"
+
+if is_cache_valid "$CACHE_FILE"; then
+    touch "$CACHE_FILE" 2>/dev/null
+    exec "$REAL_PKEXEC" "$@"
+fi
+
+if show_uac_prompt "pkexec $*"; then
+    touch "$CACHE_FILE" 2>/dev/null
+    exec "$REAL_PKEXEC" "$@"
+else
+    rm -f "$CACHE_FILE" 2>/dev/null
+    echo "UAC: Action cancelled by user." >&2
+    exit 1
+fi

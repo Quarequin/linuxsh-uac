@@ -1,0 +1,10 @@
+[Unit]
+Description=Sync UAC passwordless configuration
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/uac/syncuac
+
+[Install]
+WantedBy=multi-user.target

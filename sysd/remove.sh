@@ -20,9 +20,10 @@ rm -f /etc/systemd/system/uac-sync.service
 rm -f /etc/systemd/system/uac-sync.path
 systemctl daemon-reload
 
-echo "[*] Removing system wrappers..."
+echo "[*] Removing system wrappers and profile settings..."
 rm -f /usr/local/bin/sudo
 rm -f /usr/local/bin/pkexec
+rm -f /etc/profile.d/99-uac-wrapper.sh
 
 echo "[*] Removing UAC modules and configurations..."
 rm -rf /usr/local/bin/uac
@@ -37,5 +38,4 @@ rm -f /tmp/.uac_sudo_* 2>/dev/null || true
 rm -f /tmp/.uac_pk_* 2>/dev/null || true
 
 echo "[+] uac-systemd has been completely removed from the system!"
-
-#chmod +x remove.sh
+echo "[!] Note: Please restart your terminal, or run 'unalias sudo pkexec 2>/dev/null && hash -r' to revert your current session."
