@@ -1,0 +1,74 @@
+cat << 'EOF' | sudo tee /usr/local/bin/uac/libuac
+#!/bin/sh
+# Shared UAC Library Function (POSIX sh)
+
+# Load configuration
+if [ -f "/usr/local/bin/uac/uac.conf" ]; then
+    . "/usr/local/bin/uac/uac.conf"
+else
+    TIMEOUT=900
+    SUDOERS_FILE="/etc/sudoers.d/99-uac-passwordless"
+    CACHE_DIR="/tmp"
+fi
+
+CURRENT_USER="$(id -un 2>/dev/null || echo "$USER")"
+UID_VAL="$(id -u 2>/dev/null || echo "1000")"
+
+# Check if user needs UAC (Passwordless User)
+is_passwordless_user() {
+    grep -Eq "^${CURRENT_USER}([[:space:]]|\$)" "$SUDOERS_FILE" 2>/dev/null
+}
+
+# Check timestamp cache
+is_cache_valid() {
+    _cache="$1"
+    if [ -f "$_cache" ]; then
+        _now=$(date +%s 2>/dev/null)
+        _mtime=$(stat -c %Y "$_cache" 2>/dev/null)
+        if [ -n "$_now" ] && [ -n "$_mtime" ]; then
+            _age=$((_now - _mtime))
+            if [ "$_age" -ge 0 ] && [ "$_age" -lt "$TIMEOUT" ]; then
+                return 0
+            fi
+        fi
+    fi
+    return 1
+}
+
+# Show UAC Prompt (1-line TUI, GUI Zenity)
+show_uac_prompt() {
+    _cmd="$1"
+    _ret=1
+
+    if [ -t 0 ] || [ -t 1 ]; then
+        # ------------------ TUI Mode (Single Line Prompt) ------------------
+        if [ -c /dev/tty ]; then
+            printf "[UAC] Allow command '%s'? (y/N): " "$_cmd" > /dev/tty
+            read choice < /dev/tty
+            case "$choice" in
+                y|Y|yes|Yes) _ret=0 ;;
+                *) _ret=1 ;;
+            esac
+        else
+            _ret=1
+        fi
+    else
+        # ------------------ GUI Mode (Zenity) ------------------
+        if [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+            zenity --question \
+                   --title="User Account Control" \
+                   --text="<b>Do you want to allow this app to make changes?</b>\n\n<b>Command:</b> <code>$_cmd</code>" \
+                   --ok-label="Yes" \
+                   --cancel-label="No" \
+                   --icon-name="security-high" \
+                   --width=480 2>/dev/null
+            _ret=$?
+        else
+            _ret=1
+        fi
+    fi
+    return $_ret
+}
+EOF
+
+sudo chmod +x /usr/local/bin/uac/libuac
