@@ -1,0 +1,13 @@
+cat << 'EOF' | sudo tee /usr/local/bin/uac/uac.conf
+# Central Configuration for UAC System
+
+# Session Timeout in seconds (900 seconds = 15 minutes)
+TIMEOUT=900
+
+# Generated permission target paths
+SUDOERS_FILE="/etc/sudoers.d/99-uac-passwordless"
+POLKIT_FILE="/etc/polkit-1/rules.d/49-uac-passwordless.rules"
+
+# Cache Directory
+CACHE_DIR="/tmp"
+EOF
